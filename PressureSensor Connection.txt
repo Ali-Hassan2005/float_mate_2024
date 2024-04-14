@@ -1,9 +1,9 @@
 VSPI PINS
 
-
-GPIO23 --> MOSI  <-- DIN  (GREEN)
-GPIO19 --> MISO  <-- DOUT (PURPLE)
-GPIO5  --> CS    <-- (NO CS PIN ?!)
-GPIO18 --> VCLK  <-- SCLK (GREY)
-GND    --> GND   <-- WHITE
-
+ESP32    | UNIVERSAL | PRESSURE SENSOR
+GPIO23 --> MOSI      <-- DIN  (GREEN)
+GPIO19 --> MISO      <-- DOUT (PURPLE)
+GPIO5  --> CS        <-- (NO CS PIN ?!)
+GPIO18 --> VCLK      <-- SCLK (GREY)
+GND    -->   GND     <-- WHITE
+3.3V   -->   VCC     <-- VCC (YELLOW)
