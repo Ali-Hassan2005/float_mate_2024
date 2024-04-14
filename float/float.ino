@@ -158,6 +158,8 @@ void setup() {
 
 void loop() {
   server.handleClient();
+
+  // This Logic handles disconnection from  the Server and reconnects if needed
   if(WiFi.status() != WL_CONNECTED){
     Serial.println();
   Serial.println();
