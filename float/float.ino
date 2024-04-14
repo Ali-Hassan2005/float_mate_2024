@@ -32,8 +32,8 @@ WebServer server(80);
  * 
  */
  
-const char* ssid = "Gx";
-const char* password = "mostafa71";
+const char* ssid = "Redmi";
+const char* password = "123www123";
 
 // ---------------------------------------------
 
@@ -89,7 +89,7 @@ void start() {
     for(int counter = 0; counter <= 5; counter++) {
       GoUp();
       generateJSON(doc);
-      delay(1000);
+      delay(5000);
     }
 
     Stopp();
@@ -158,6 +158,28 @@ void setup() {
 
 void loop() {
   server.handleClient();
+  if(WiFi.status() != WL_CONNECTED){
+    Serial.println();
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  server.begin();
+    Serial.println("HTTP server started");
+  
+    }
+    
 }
 
 
