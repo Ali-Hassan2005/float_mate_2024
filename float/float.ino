@@ -14,9 +14,9 @@ const int MAX_DUTY_CYCLE = (int)(pow(2, resolution) - 1);
 
 int dutyCycle = 100;
 
-#define enB 5
-#define in3 2
-#define in4 4
+#define enB 33
+#define in3 35
+#define in4 32
 
 int rotDirection = 0;
 int pressed = false;
@@ -67,10 +67,13 @@ void getAllData() {
 void start() {
   try {
     for(int counter = 0; counter <= 5; counter++) {
+      GoForward();
       generateJSON(doc);
       delay(1000);
     }
 
+    Stopp();
+    
     StaticJsonDocument<200> msg;
     msg["msg"] = "The mission completed successfully";
     String jsonString;
@@ -158,7 +161,8 @@ void GoBackwards(){
 
 void Stopp(){
   digitalWrite(in3,LOW);
-  digitalWrite(in4,LOW);  
+  digitalWrite(in4,LOW); 
+   ledcWrite(ledChannel, 0); 
 }
 
 float ReadPressure() {
