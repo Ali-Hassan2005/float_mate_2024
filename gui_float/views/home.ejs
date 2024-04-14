@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control Panel</title>
+    <link rel="stylesheet" href="/stylesheets/style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="button-container">
+            <button class="start-button"  ><a href="/start">Start</a></button>
+            <button class="ping-button"  > <a href="/ping">Ping</a></button>
+            <button class="get-data-button"><a href="/getData">Get Data</a></button>
+        </div>
+        <div class="data-container">
+            <h2>Data:</h2>
+            <% if (data && data.length > 0) { %>
+                <table id="data-table">
+                    <thead>
+                        <tr>
+                            <th>Platform</th>
+                            <th>Time</th>
+                            <th>Pressure</th>
+                            <th>Depth</th>
+                        </tr>
+                    </thead>
+                    <tbody id="data-body">
+                        <% data.forEach(function(item) { %>
+                            <tr>
+                                <td><%= item.platform %></td>
+                                <td><%= item.time %></td>
+                                <td><%= item.pressure.value %> <%= item.pressure.unit %></td>
+                                <td><%= item.depth.value %> <%= item.depth.unit %></td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } else { %>
+                <p>No data available</p>
+            <% } %>
+            <h2>Messages:</h2>
+            <% if (message) { %>
+                <p><%= message %></p>
+            <% } else { %>
+                <p>No message available</p>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html>
