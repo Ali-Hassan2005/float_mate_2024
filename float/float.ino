@@ -4,33 +4,39 @@
 #include <ArduinoJson.h>
 #include "uRTCLib.h"
 
+// ***** ADRESSES *****
 uRTCLib rtc(0x68);
 
+// ***** CONSTANTS AND VARIABLES FOR MOTORS AND SENSORS ******
 const int freq = 5000;
 const int ledChannel = 0;
 const int resolution = 8;
 
 const int MAX_DUTY_CYCLE = (int)(pow(2, resolution) - 1);
-
 int dutyCycle = 100;
 
 #define enB 33
 #define in3 35
 #define in4 32
 
-int rotDirection = 0;
-int pressed = false;
-
 String TimeString;
 
+// ***** SERVER OBJECTS ******
+
 DynamicJsonDocument doc(2048);  
-
 JsonArray dataArray = doc.to<JsonArray>();
+WebServer server(80);
 
+/*
+ * WIFI CREDENTIALS SETUP
+ * 
+ */
+ 
 const char* ssid = "Gx";
 const char* password = "mostafa71";
 
-WebServer server(80);
+// ---------------------------------------------
+
 
 void generateJSON(DynamicJsonDocument& doc) {
   JsonObject data = doc.createNestedObject();
@@ -63,11 +69,25 @@ void getAllData() {
   }
 }
 
+/*
+ * CALLBACK FUNCTIONS FOR BUTTONS
+ * 
+ * 
+ */
 
 void start() {
+
+  // CW is GoUp
+  // CCW is GoDown
+  
+  // GoUp --> ClockWise --> Goes up
+  // GoDown --> CounterClockWise --> Goes Down
+  
+  // We should get a certain Depth on sensor while motor is CW and add on it 20Kpa (2 meters) then we reverse the motor direction to CW
+   
   try {
     for(int counter = 0; counter <= 5; counter++) {
-      GoForward();
+      GoUp();
       generateJSON(doc);
       delay(1000);
     }
@@ -98,18 +118,18 @@ void heartbeat() {
     server.send(200, "application/json", jsonString);
 }
 
-
+// --------------------------------------------------------------------------------------------
 
 void setup() {
+  
+// ********* SERIAL, SENSORS AND MOTORS SETUP **********
   Serial.begin(115200);
   delay(10);
-  
   Wire.begin();
-  
   SetupMotor();
-
   SetupRTC();
-// server setup
+  
+// ********** SERVER SETUP **************
   Serial.println();
   Serial.println();
   Serial.print("Connecting to ");
@@ -141,7 +161,13 @@ void loop() {
 }
 
 
-void GoForward(){
+/*
+ * MOTOR FUNCTIONS
+ * 
+ * 
+ */
+ 
+void GoUp(){
   digitalWrite(in3,HIGH);
   digitalWrite(in4,LOW);
   for(int dutyCycle = 0; dutyCycle <= MAX_DUTY_CYCLE; dutyCycle += 2){   
@@ -150,7 +176,7 @@ void GoForward(){
   }  
 }
 
-void GoBackwards(){
+void GoDown(){
   digitalWrite(in3,LOW);
   digitalWrite(in4,HIGH);
   for(int dutyCycle = 0; dutyCycle <= MAX_DUTY_CYCLE; dutyCycle += 2){   
@@ -162,8 +188,26 @@ void GoBackwards(){
 void Stopp(){
   digitalWrite(in3,LOW);
   digitalWrite(in4,LOW); 
-   ledcWrite(ledChannel, 0); 
+  ledcWrite(ledChannel, 0); 
 }
+
+void SetupMotor(){
+  pinMode(enB, OUTPUT);
+  pinMode(in3, OUTPUT);
+  pinMode(in4, OUTPUT);
+  
+  ledcSetup(ledChannel, freq, resolution);
+  // attach the channel to the GPIO to be controlled
+  ledcAttachPin(enB, ledChannel);
+}
+
+// ---------------------------------------------------------------------------------------------
+
+/*
+ * PRESSURE SENSOR AND DEPTH CALCULATIONS
+ * 
+ * 
+ */
 
 float ReadPressure() {
 
@@ -203,7 +247,12 @@ float CalculateDepth(float pressure) {
   return Depth;
 }
 
-// note
+//------------------------------------------------------------------------------------------------------
+
+/*
+ * TIME MEASUREMENT AND SETUP FOR RTC
+ * 
+ */
 
 String MeasureTime(){
   rtc.refresh();
@@ -228,13 +277,4 @@ void SetupRTC(){
   //  rtc.set(0, 57, 5, 0, 13, 4, 24);
   //  RTCLib::set(byte second, byte minute, byte hour, byte dayOfWeek, byte dayOfMonth, byte month, byte year)
 }
-
-void SetupMotor(){
-  pinMode(enB, OUTPUT);
-  pinMode(in3, OUTPUT);
-  pinMode(in4, OUTPUT);
-  
-  ledcSetup(ledChannel, freq, resolution);
-  // attach the channel to the GPIO to be controlled
-  ledcAttachPin(enB, ledChannel);
-}
+//-----------------------------------------------------------------------------------------------------------
