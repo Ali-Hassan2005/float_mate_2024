@@ -8,6 +8,8 @@ Pins:
  MISO: pin 12
  SCK: pin 13
  MCLK: pin 9 (or use external clock generator on 32kHz)
+
+ https://bluerobotics.com/learn/pressure-depth-calculator/ --> Use this for calibration and equations
  
 */
 
