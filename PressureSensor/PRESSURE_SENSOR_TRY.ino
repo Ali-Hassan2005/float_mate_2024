@@ -9,15 +9,26 @@ Pins:
  SCK: pin 13
  MCLK: pin 9 (or use external clock generator on 32kHz)
  
- created 29 February 2012
- by MiGeRA
 */
 
 // include library:
 #include <SPI.h>
 
-// generate a MCKL signal pin
- const int clock = 9;
+// generate a MCLK signal pin
+const int clock = 9;
+ 
+// Leave this here please, It's needed as a global variable for the read function
+float TEMPREAL;
+
+/////////// CHANGE THOSE FOR CALIBRATION BEFORE MISSION ////////////////////////
+
+#define GravityConstant 9.81
+#define PressureZero 100.60
+#define WaterDensity 1000
+#define DepthZero 99.60
+#define CalibrationConstant 10
+
+// -----------------------------------------------------------------------------
 
 void resetsensor() //this function keeps the sketch a little shorter
 {
@@ -43,9 +54,29 @@ void loop()
 
   int Pressure = MeasurePressure();
   
-  Serial.print("Pressure in Kpa = ");
-  Serial.println((float)Pressure * 0.1);
+  Serial.print("Pressure = ");
+  float PressureKpa = (float)Pressure * 0.1;
+  Serial.print(PressureKpa);
+  Serial.print(" Kpa");
+  
+  /*
+  float Depth = CalculateDepth(PressureKpa,TEMPREAL);
+  Serial.print(", Altitude = ");
+  Serial.print(Depth);
+  Serial.print(" Meters");
 
+  float DepthCalibre = Depth / 255.5556;
+  Serial.print(", REALDepth = ");
+  Serial.print(DepthCalibre);
+  Serial.print(" Meters");
+  */
+  
+  float Altitude2 = getDepth(PressureKpa);
+  Serial.print(", Altitude2 = ");
+  Serial.print(Altitude2);
+  Serial.println(" Meters");
+  
+  
   delay(1000);
 }
 
@@ -154,10 +185,32 @@ int MeasurePressure(){
   const long SENS = c1 + ((c3 * dT) >> 10) + 24576;
   const long X = (SENS * (D1 - 7168) >> 14) - OFF;
   long PCOMP = ((X * 10) >> 5) + 2500;
-  float TEMPREAL = TEMP/10;
+  TEMPREAL = TEMP/10;
   float PCOMPHG = PCOMP * 750.06 / 10000; // mbar*10 -> mmHg === ((mbar/10)/1000)*750/06
 
   PCOMP = (PCOMP / 10) + 3;
   
   return PCOMP; // RETURNS PRESSURE IN mbar // Multiply by 0.1 to get Kpa
 }
+
+
+float CalculateDepth(float pressure, float temperature) {
+  // Standard sea level pressure (in KPa)
+  const float seaLevelPressure = 101.325;
+
+  // Absolute temperature (in Kelvin)
+  float absoluteTemperature = 25 + 273.15;
+
+  // Calculate the temperature lapse rate (change in temperature with altitude)
+  const float temperatureLapseRate = -0.0065; // K/m
+
+  // Use the hypsometric formula to estimate altitude
+  float altitude = ((pow((seaLevelPressure / pressure), (1.0 / 5.257))) - 1.0) 
+                   *(absoluteTemperature / temperatureLapseRate);
+
+  // Return altitude in meters
+  return altitude;
+}
+ float getDepth(float press) {
+  return ((press - PressureZero / WaterDensity*GravityConstant) - DepthZero) / CalibrationConstant;
+ }
