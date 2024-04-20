@@ -1,20 +1,11 @@
-/*
- MS5540C Miniature Barometer Module
- This program will read your MS5440C or compatible pressure sensor every 1 second
- 
-Pins:
- MS5540 sensor attached to pins 10 - 13:
- MOSI: pin 11
- MISO: pin 12
- SCK: pin 13
- MCLK: pin 9 (or use external clock generator on 32kHz)
-
- https://bluerobotics.com/learn/pressure-depth-calculator/ --> Use this for calibration and equations
- 
-*/
-
-// include library:
+#include <SoftwareSerial.h>
 #include <SPI.h>
+// software serial #1: RX = digital pin 7, TX = digital pin 8
+SoftwareSerial PortOne(7, 8);
+
+// software serial #2: RX = digital pin 5, TX = digital pin 6
+// on the Mega, use other pins instead, since 8 and 9 don't work on the Mega
+SoftwareSerial PortTwo(5, 6);
 
 // generate a MCLK signal pin
 const int clock = 9;
@@ -22,64 +13,94 @@ const int clock = 9;
 // Leave this here please, It's needed as a global variable for the read function
 float TEMPREAL;
 
+
 /////////// CHANGE THOSE FOR CALIBRATION BEFORE MISSION ////////////////////////
 
+float DepthZero = 99.60;
+float PressureZero = 100.60;
+
 #define GravityConstant 9.81
-#define PressureZero 100.60
 #define WaterDensity 1000
-#define DepthZero 99.60
 #define CalibrationConstant 10
 
 // -----------------------------------------------------------------------------
 
-void resetsensor() //this function keeps the sketch a little shorter
-{
-  SPI.setDataMode(SPI_MODE0); 
-  SPI.transfer(0x15);
-  SPI.transfer(0x55);
-  SPI.transfer(0x40);
-}
 
 void setup() {
-  Serial.begin(9600);
-  SPI.begin(); //see SPI library details on arduino.cc for details
-  SPI.setBitOrder(MSBFIRST);
-  SPI.setClockDivider(SPI_CLOCK_DIV32); //divide 16 MHz to communicate on 500 kHz
-  pinMode(clock, OUTPUT);
-  delay(100);
+  // Open serial communications and wait for port to open:
+  Serial.begin(115200);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB port only
+  }
+
+
+  // Start each software serial port
+  PortOne.begin(115200);
+  PortTwo.begin(115200);
 }
 
-void loop() 
-{
+void loop() {
   TCCR1B = (TCCR1B & 0xF8) | 1 ; //generates the MCKL signal
   analogWrite (clock, 128) ; 
+  
+  PortTwo.listen();
+  Serial.println();
+  while (PortTwo.available() > 0){
+    char Command = PortTwo.read();
+    if(Command == 'M'){
+      int Pressure = MeasurePressure();
+      float PressureKpa = (float)Pressure * 0.1;
+      float Depth = GetDepth(PressureKpa);
+      SendAltitudeAndDepth(PressureKpa, Depth);
+    }
+    
+  else if(Command == 'C') {
+      Serial.println("Calibration Process begins..");
+      Serial.println("Send the Value for PZero and DZero on Port1 (e.g., P100.60, D99.60)");
 
-  int Pressure = MeasurePressure();
-  
-  Serial.print("Pressure = ");
-  float PressureKpa = (float)Pressure * 0.1;
-  Serial.print(PressureKpa);
-  Serial.print(" Kpa");
-  
-  /*
-  float Depth = CalculateDepth(PressureKpa,TEMPREAL);
-  Serial.print(", Altitude = ");
-  Serial.print(Depth);
-  Serial.print(" Meters");
+      // Variables to store extracted numbers
+      float extractedValue;
+      char receivedString[10];  // Buffer to hold received string
+      int index = 0;
 
-  float DepthCalibre = Depth / 255.5556;
-  Serial.print(", REALDepth = ");
-  Serial.print(DepthCalibre);
-  Serial.print(" Meters");
-  */
-  
-  float Altitude2 = getDepth(PressureKpa);
-  Serial.print(", Altitude2 = ");
-  Serial.print(Altitude2);
-  Serial.println(" Meters");
-  
-  
-  delay(1000);
+      // Clear buffer before receiving
+      memset(receivedString, 0, sizeof(receivedString));
+
+      // Read calibration data until newline or buffer full
+      while (PortOne.available() && index < sizeof(receivedString) - 1) {
+        char inByte = PortOne.read();
+        if (inByte == '\n') {
+          break;
+        }
+        receivedString[index++] = inByte;
+      }
+
+      // Check if a string was received
+      if (index > 0) {
+        // Extract the number after the letter (assuming format "PXXX.XX" or "DXXX.XX")
+        if (receivedString[0] == 'P') {
+          extractedValue = atof(&receivedString[1]);
+          PressureZero = extractedValue;
+          Serial.print("PZero set to: ");
+          Serial.println(PressureZero);
+        } else if (receivedString[0] == 'D') {
+          extractedValue = atof(&receivedString[1]);
+          DepthZero = extractedValue;
+          Serial.print("DZero set to: ");
+          Serial.println(DepthZero);
+        } else {
+          Serial.println("Invalid format. Please use 'P' or 'D' followed by a number.");
+        }
+    }
+  }
+ }
+}
+
+void SendAltitudeAndDepth(float PressureKpa, float Depth){
+  PortOne.print("P");
+  PortOne.println(PressureKpa);
+  PortOne.print("D");
+  PortOne.println(Depth);
 }
 
 int MeasurePressure(){
@@ -195,24 +216,14 @@ int MeasurePressure(){
   return PCOMP; // RETURNS PRESSURE IN mbar // Multiply by 0.1 to get Kpa
 }
 
-
-float CalculateDepth(float pressure, float temperature) {
-  // Standard sea level pressure (in KPa)
-  const float seaLevelPressure = 101.325;
-
-  // Absolute temperature (in Kelvin)
-  float absoluteTemperature = 25 + 273.15;
-
-  // Calculate the temperature lapse rate (change in temperature with altitude)
-  const float temperatureLapseRate = -0.0065; // K/m
-
-  // Use the hypsometric formula to estimate altitude
-  float altitude = ((pow((seaLevelPressure / pressure), (1.0 / 5.257))) - 1.0) 
-                   *(absoluteTemperature / temperatureLapseRate);
-
-  // Return altitude in meters
-  return altitude;
-}
- float getDepth(float press) {
+ float GetDepth(float press) {
   return ((press - PressureZero / WaterDensity*GravityConstant) - DepthZero) / CalibrationConstant;
  }
+
+void resetsensor() //this function keeps the sketch a little shorter
+{
+  SPI.setDataMode(SPI_MODE0); 
+  SPI.transfer(0x15);
+  SPI.transfer(0x55);
+  SPI.transfer(0x40);
+}

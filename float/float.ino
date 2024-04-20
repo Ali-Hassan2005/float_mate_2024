@@ -80,14 +80,14 @@ void start() {
   // CW is GoUp
   // CCW is GoDown
   
-  // GoUp --> ClockWise --> Goes up
-  // GoDown --> CounterClockWise --> Goes Down
+  // PushUp --> ClockWise --> Goes Down [Pushes Up]
+  // PushDown --> CounterClockWise --> Goes Up [Pushes Down]
   
-  // We should get a certain Depth on sensor while motor is CW and add on it 20Kpa (2 meters) then we reverse the motor direction to CW
+  // TO MAKE MOTOR FULL PUSH DOWN OR UP WE NEED IT TO TURN ON FOR 5 SECONDS THEN TURN OFF
    
   try {
     for(int counter = 0; counter <= 5; counter++) {
-      GoUp();
+      PushUp();
       generateJSON(doc);
       delay(5000);
     }
@@ -191,7 +191,7 @@ void loop() {
  * 
  */
  
-void GoUp(){
+void PushUp(){
   digitalWrite(in3,HIGH);
   digitalWrite(in4,LOW);
   for(int dutyCycle = 0; dutyCycle <= MAX_DUTY_CYCLE; dutyCycle += 2){   
@@ -200,7 +200,7 @@ void GoUp(){
   }  
 }
 
-void GoDown(){
+void PushDown(){
   digitalWrite(in3,LOW);
   digitalWrite(in4,HIGH);
   for(int dutyCycle = 0; dutyCycle <= MAX_DUTY_CYCLE; dutyCycle += 2){   
@@ -296,6 +296,18 @@ void SetupRTC(){
   #else
     URTCLIB_WIRE.begin();
   #endif
+
+  if(rtc.enableBattery()){
+    Serial.println("Battery activated correctly.");
+  } else {
+    Serial.println("ERROR activating battery.");
+  }
+
+  // Check whether OSC is set to use VBAT or not
+  if(rtc.getEOSCFlag())
+    Serial.println(F("Oscillator will not use VBAT when VCC cuts off. Time will not increment without VCC!"));
+  else
+    Serial.println(F("Oscillator will use VBAT when VCC cuts off."));
 
   //  LEAVE THIS UNCOMMENTD IF YOU WANT TO SET TIME
   //  rtc.set(0, 57, 5, 0, 13, 4, 24);

@@ -1,0 +1,10 @@
+SPI PINS
+
+NANO              | UNIVERSAL | PRESSURE SENSOR
+------------------|-----------|--------------
+D11             -->   MOSI    <-- DIN  (GREEN)
+D12             -->   MISO    <-- DOUT (PURPLE)
+D13             -->   VSCLK   <-- SCLK (GREY)
+D9              -->   MCLK    <-- MCLK (BLUE)
+GND             -->   GND     <-- WHITE
+5V              -->   VCC     <-- VCC (YELLOW)
