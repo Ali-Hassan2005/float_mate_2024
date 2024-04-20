@@ -1,0 +1,20 @@
+PORTS FOR COMMUNICATION BETWEEN ESP AND ARDUINO NANO
+
+ESP : 
+	PORT1 : Send 'M', 'C'
+			----> 'M' here is to get a reading on PORT2, 
+				and 'C' is to initiate a calibration
+				for ZeroDepth and ZeroPressure above the pool we'll use
+
+	PORT2 : Recieve Measurement Data for Depth and Pressure
+NANO : 
+	PORT1 : Send Measurement Data "P + 100.70", "D + 0.01"
+			----> P' here is to denote Pressure readings and 'D' for Depth 					readings, and recieve calibration values for PZero and DZero
+
+	PORT2 : Recieve Instructions from ESP
+
+
+
+
+----> NANO SIDE IS DONE "NOT SURE THO"
+----> ESP SIDE IS MISSING SOME STUFF + THE ESP CODE SHOULD ALSO BE ADDED TO THE MAIN CODE
