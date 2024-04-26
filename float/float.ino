@@ -2,10 +2,8 @@
 #include <WiFiClient.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
+#include <SPI.h>
 #include "uRTCLib.h"
-
-// ***** ADRESSES *****
-uRTCLib rtc(0x68);
 
 // ***** CONSTANTS AND VARIABLES FOR MOTORS AND SENSORS ******
 const int freq = 5000;
@@ -19,6 +17,21 @@ int dutyCycle = 100;
 #define in3 35
 #define in4 32
 
+/////////// CHANGE THOSE FOR CALIBRATION BEFORE MISSION ////////////////////////
+
+float DepthZero = 99.60;
+float PressureZero = 100.60;
+
+#define GravityConstant 9.81
+#define WaterDensity 1000
+#define CalibrationConstant 10
+
+// -----------------------------------------------------------------------------
+
+// Leave this here please, It's needed as a global variable for the read function
+float TEMPREAL;
+
+///////////////////// TIME STRING ///////////////
 String TimeString;
 
 // ***** SERVER OBJECTS ******
@@ -37,6 +50,10 @@ const char* password = "mostafa71";
 
 // ---------------------------------------------
 
+/*
+ * JSON GENERATION FUNCTIONS
+ * 
+ */
 
 void generateJSON(DynamicJsonDocument& doc) {
   JsonObject data = doc.createNestedObject();
@@ -68,6 +85,8 @@ void getAllData() {
     server.send(500, "application/json", error);
   }
 }
+
+// ---------------------------------------------
 
 /*
  * CALLBACK FUNCTIONS FOR BUTTONS
@@ -135,12 +154,9 @@ void sendData() {
   }
   
 
-  
-  int value1 = jsonBuffer["key1"];
-  int value2 = jsonBuffer["key2"];
-
-  Serial.println(value1);
-  Serial.println(value2);
+  // First key is PressureZero, second key is DepthZero 
+  PressureZero = jsonBuffer["key1"];
+  DepthZero = jsonBuffer["key2"];
   
   StaticJsonDocument<200> responseJson;
   responseJson["msg"] = "success";
@@ -164,6 +180,11 @@ void setup() {
   Wire.begin();
   SetupMotor();
   SetupRTC();
+  SPI.begin(); //see SPI library details on arduino.cc for details
+  SPI.setBitOrder(MSBFIRST);
+  SPI.setClockDivider(SPI_CLOCK_DIV32); //divide 16 MHz to communicate on 500 kHz
+  
+  delay(100);
   
 // ********** SERVER SETUP **************
   Serial.println();
@@ -200,25 +221,25 @@ void loop() {
   server.handleClient();
   if(WiFi.status() != WL_CONNECTED){
     Serial.println();
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
+    Serial.println();
+    Serial.print("Connecting to ");
+    Serial.println(ssid);
 
-  WiFi.begin(ssid, password);
+    WiFi.begin(ssid, password);
 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-  }
+    while (WiFi.status() != WL_CONNECTED) {
+      delay(500);
+      Serial.print(".");
+    }
 
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  server.begin();
+    Serial.println("");
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+    server.begin();
     Serial.println("HTTP server started");
   
-    }
+  }
     
 }
 
@@ -230,6 +251,8 @@ void loop() {
  */
  
 void GoUp(){
+  //////////////////// PUSH DOWN ////////////////
+
   digitalWrite(in3,HIGH);
   digitalWrite(in4,LOW);
   for(int dutyCycle = 0; dutyCycle <= MAX_DUTY_CYCLE; dutyCycle += 2){   
@@ -239,6 +262,8 @@ void GoUp(){
 }
 
 void GoDown(){
+  //////////////////// PULL UP ////////////////
+
   digitalWrite(in3,LOW);
   digitalWrite(in4,HIGH);
   for(int dutyCycle = 0; dutyCycle <= MAX_DUTY_CYCLE; dutyCycle += 2){   
@@ -271,42 +296,121 @@ void SetupMotor(){
  * 
  */
 
-float ReadPressure() {
+int MeasurePressure(){
+  resetsensor(); //resets the sensor - caution: afterwards mode = SPI_MODE0!
 
-  // THIS CODE DOES NOT WORK
+  //Calibration word 1
+  unsigned int result1 = 0;
+  unsigned int inbyte1 = 0;
+  SPI.transfer(0x1D); //send first byte of command to get calibration word 1
+  SPI.transfer(0x50); //send second byte of command to get calibration word 1
+  SPI.setDataMode(SPI_MODE1); //change mode in order to listen
+  result1 = SPI.transfer(0x00); //send dummy byte to read first byte of word
+  result1 = result1 << 8; //shift returned byte 
+  inbyte1 = SPI.transfer(0x00); //send dummy byte to read second byte of word
+  result1 = result1 | inbyte1; //combine first and second byte of word
+
+  resetsensor(); //resets the sensor
+
+  //Calibration word 2; see comments on calibration word 1
+  unsigned int result2 = 0;
+  byte inbyte2 = 0; 
+  SPI.transfer(0x1D);
+  SPI.transfer(0x60);
+  SPI.setDataMode(SPI_MODE1); 
+  result2 = SPI.transfer(0x00);
+  result2 = result2 <<8;
+  inbyte2 = SPI.transfer(0x00);
+  result2 = result2 | inbyte2;
+
+  resetsensor(); //resets the sensor
+
+  //Calibration word 3; see comments on calibration word 1
+  unsigned int result3 = 0;
+  byte inbyte3 = 0;
+  SPI.transfer(0x1D);
+  SPI.transfer(0x90); 
+  SPI.setDataMode(SPI_MODE1); 
+  result3 = SPI.transfer(0x00);
+  result3 = result3 <<8;
+  inbyte3 = SPI.transfer(0x00);
+  result3 = result3 | inbyte3;
+
+  resetsensor(); //resets the sensor
+
+  //Calibration word 4; see comments on calibration word 1
+  unsigned int result4 = 0;
+  byte inbyte4 = 0;
+  SPI.transfer(0x1D);
+  SPI.transfer(0xA0);
+  SPI.setDataMode(SPI_MODE1); 
+  result4 = SPI.transfer(0x00);
+  result4 = result4 <<8;
+  inbyte4 = SPI.transfer(0x00);
+  result4 = result4 | inbyte4;
   
-  Wire.beginTransmission(0x76); 
-  Wire.write(0x48);
-  Wire.endTransmission();
+  //now we do some bitshifting to extract the calibration factors 
+  //out of the calibration words;
+  long c1 = (result1 >> 1) & 0x7FFF;
+  long c2 = ((result3 & 0x003F) << 6) | (result4 & 0x003F);
+  long c3 = (result4 >> 6) & 0x03FF;
+  long c4 = (result3 >> 6) & 0x03FF;
+  long c5 = ((result1 & 0x0001) << 10) | ((result2 >> 6) & 0x03FF);
+  long c6 = result2 & 0x003F;
   
-  delay(40);
+  resetsensor(); //resets the sensor
+
+  //Pressure:
+  unsigned int presMSB = 0; //first byte of value
+  unsigned int presLSB = 0; //last byte of value
+  unsigned int D1 = 0;
+  SPI.transfer(0x0F); //send first byte of command to get pressure value
+  SPI.transfer(0x40); //send second byte of command to get pressure value
+  delay(35); //wait for conversion end
+  SPI.setDataMode(SPI_MODE1); //change mode in order to listen
+  presMSB = SPI.transfer(0x00); //send dummy byte to read first byte of value
+  presMSB = presMSB << 8; //shift first byte
+  presLSB = SPI.transfer(0x00); //send dummy byte to read second byte of value
+  D1 = presMSB | presLSB; //combine first and second byte of value
+  //Serial.print("D1 - Pressure raw = ");
+  //Serial.println(D1);
+
+  resetsensor(); //resets the sensor  
+
+  //Temperature:
+  unsigned int tempMSB = 0; //first byte of value
+  unsigned int tempLSB = 0; //last byte of value
+  unsigned int D2 = 0;
+  SPI.transfer(0x0F); //send first byte of command to get temperature value
+  SPI.transfer(0x20); //send second byte of command to get temperature value
+  delay(35); //wait for conversion end
+  SPI.setDataMode(SPI_MODE1); //change mode in order to listen
+  tempMSB = SPI.transfer(0x00); //send dummy byte to read first byte of value
+  tempMSB = tempMSB << 8; //shift first byte
+  tempLSB = SPI.transfer(0x00); //send dummy byte to read second byte of value
+  D2 = tempMSB | tempLSB; //combine first and second byte of value
+  //Serial.print("D2 - Temperature raw = ");
+  //Serial.println(D2); //voila!
+
+  //calculation of the real values by means of the calibration factors and the maths
+  //in the datasheet. const MUST be long
+  const long UT1 = (c5 << 3) + 20224;
+  const long dT = D2 - UT1;
+  const long TEMP = 200 + ((dT * (c6 + 50)) >> 10);
+  const long OFF  = (c2 * 4) + (((c4 - 512) * dT) >> 12);
+  const long SENS = c1 + ((c3 * dT) >> 10) + 24576;
+  const long X = (SENS * (D1 - 7168) >> 14) - OFF;
+  long PCOMP = ((X * 10) >> 5) + 2500;
+  TEMPREAL = TEMP/10;
+  float PCOMPHG = PCOMP * 750.06 / 10000; // mbar*10 -> mmHg === ((mbar/10)/1000)*750/06
+
+  PCOMP = (PCOMP / 10) + 3;
   
-  Wire.beginTransmission(0x76);
-  Wire.write(0x00);
-  Wire.endTransmission();
-  
-  Wire.requestFrom(0x76, 3);
-  
-  if (Wire.available() == 3) {
-    byte msb = Wire.read();
-    byte lsb = Wire.read();
-    byte crc = Wire.read();
-    
-    unsigned int rawPressure = ((msb << 8) | lsb) & 0x3FFF;
-    float pressure = ((rawPressure - 1638.0) / 13107.0) + 10.0;
-    
-    return pressure;
-  }
-  return 0.0; 
+  return PCOMP; // RETURNS PRESSURE IN mbar // Multiply by 0.1 to get Kpa
 }
 
-float CalculateDepth(float pressure) {
-
-  // THIS CODE DOES NOT WORK
-  
-  float seaLevelPressure = 1013.25; 
-  float Depth = (1.0 - pow(pressure / seaLevelPressure, 0.1903)) * 44330.0;
-  return Depth;
+float GetDepth(float press) {
+  return ((press - PressureZero / WaterDensity*GravityConstant) - DepthZero) / CalibrationConstant;
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -329,11 +433,40 @@ String MeasureTime(){
 }
 
 void SetupRTC(){
+  rtc.set_rtc_address(0x68);
+
+	// set RTC Model
+	rtc.set_model(URTCLIB_MODEL_DS1307);
+
+	// refresh data from RTC HW in RTC class object so flags like rtc.lostPower(), rtc.getEOSCFlag(), etc, can get populated
+	rtc.refresh();
+
   #ifdef ARDUINO_ARCH_ESP8266
     URTCLIB_WIRE.begin(0, 2); // D3 and D4 on ESP8266
   #else
     URTCLIB_WIRE.begin();
   #endif
+
+  if (rtc.enableBattery()) {
+		Serial.println("Battery activated correctly.");
+	} else {
+		Serial.println("ERROR activating battery.");
+	}
+
+	// Check whether OSC is set to use VBAT or not
+	if (rtc.getEOSCFlag())
+		Serial.println(F("Oscillator will not use VBAT when VCC cuts off. Time will not increment without VCC!"));
+	else
+		Serial.println(F("Oscillator will use VBAT when VCC cuts off."));
+
+	Serial.print("Lost power status: ");
+	if (rtc.lostPower()) {
+		Serial.print("POWER FAILED. Clearing flag...");
+		rtc.lostPowerClear();
+		Serial.println(" done.");
+	} else {
+		Serial.println("POWER OK");
+	}
 
   //  LEAVE THIS UNCOMMENTD IF YOU WANT TO SET TIME
   //  rtc.set(0, 57, 5, 0, 13, 4, 24);

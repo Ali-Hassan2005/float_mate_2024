@@ -1,10 +1,22 @@
-SPI PINS
+VSPI PINS ON ESP32
 
-NANO              | UNIVERSAL | PRESSURE SENSOR
+ESP32              | UNIVERSAL | PRESSURE SENSOR
 ------------------|-----------|--------------
-D11             -->   MOSI    <-- DIN  (GREEN)
-D12             -->   MISO    <-- DOUT (PURPLE)
-D13             -->   VSCLK   <-- SCLK (GREY)
-D9              -->   MCLK    <-- MCLK (BLUE)
+D23             -->   MOSI    <-- DIN  (GREEN)
+D19             -->   MISO    <-- DOUT (PURPLE)
+D18             -->   VSCLK   <-- SCLK (GREY)
+D9 (FROM NANO)  -->   32K_CLK <-- MCLK (BLUE)
 GND             -->   GND     <-- WHITE
-5V              -->   VCC     <-- VCC (YELLOW)
+3.3V            -->   VCC     <-- VCC (YELLOW)
+
+
+
+
+---> We are back to the old wiring,
+    but we now use a Nano for the sole purpose of MCLK signal of 32kHz,
+    because the RTC DS1307 does not output a SQW of 32kHZ,
+    and the ESP32 can output a 32KHz but it somehow disrupts the SPI communication with the MS5540C
+
+    Thanks for attending our TEDx
+
+    MADE IN ROBEN, WITH ❤️🤖
