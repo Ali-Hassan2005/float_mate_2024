@@ -4,6 +4,8 @@
 #include <ArduinoJson.h>
 #include <SPI.h>
 #include "uRTCLib.h"
+#include "math.h"
+
 
 // ***** CONSTANTS AND VARIABLES FOR MOTORS AND SENSORS ******
 const int freq = 5000;
@@ -16,6 +18,9 @@ int dutyCycle = 100;
 #define enB 33
 #define in3 35
 #define in4 32
+
+// ** ADRESSES **
+uRTCLib rtc(0x68);
 
 /////////// CHANGE THOSE FOR CALIBRATION BEFORE MISSION ////////////////////////
 
@@ -45,8 +50,8 @@ WebServer server(80);
  * 
  */
  
-const char* ssid = "Gx";
-const char* password = "mostafa71";
+const char* ssid = "Redmi";
+const char* password = "123www123";
 
 // ---------------------------------------------
 
@@ -61,11 +66,11 @@ void generateJSON(DynamicJsonDocument& doc) {
   data["time"] = MeasureTime();
 
   JsonObject pressure = data.createNestedObject("pressure");
-  pressure["value"] = ReadPressure();
+  pressure["value"] = (MeasurePressure() - 901);
   pressure["unit"] = "kpa";
 
   JsonObject depth = data.createNestedObject("depth");
-  depth["value"] = CalculateDepth(pressure["value"]);
+  depth["value"] = (GetDepth(pressure["value"]));
   depth["unit"] = "Meters";
 }
 
@@ -108,7 +113,7 @@ void start() {
     for(int counter = 0; counter <= 5; counter++) {
       GoUp();
       generateJSON(doc);
-      delay(5000);
+      delay(500);
     }
 
     Stopp();
@@ -240,6 +245,14 @@ void loop() {
     Serial.println("HTTP server started");
   
   }
+
+  Serial.print("Pressure: ");
+    Serial.print(MeasurePressure());
+    Serial.println("Kpa");
+
+    Serial.print(", Depth: ");
+    Serial.print(GetDepth(MeasurePressure()));
+    Serial.println("Meters");
     
 }
 
@@ -410,7 +423,15 @@ int MeasurePressure(){
 }
 
 float GetDepth(float press) {
-  return ((press - PressureZero / WaterDensity*GravityConstant) - DepthZero) / CalibrationConstant;
+  return roundf(((press - PressureZero / WaterDensity*GravityConstant) - DepthZero) / CalibrationConstant);
+}
+
+void resetsensor() //this function keeps the sketch a little shorter
+{
+  SPI.setDataMode(SPI_MODE0); 
+  SPI.transfer(0x15);
+  SPI.transfer(0x55);
+  SPI.transfer(0x40);
 }
 
 //------------------------------------------------------------------------------------------------------
@@ -469,7 +490,9 @@ void SetupRTC(){
 	}
 
   //  LEAVE THIS UNCOMMENTD IF YOU WANT TO SET TIME
-  //  rtc.set(0, 57, 5, 0, 13, 4, 24);
+    rtc.set(0, 52, 7, 0, 13, 4, 24);
   //  RTCLib::set(byte second, byte minute, byte hour, byte dayOfWeek, byte dayOfMonth, byte month, byte year)
 }
+
+
 //-----------------------------------------------------------------------------------------------------------

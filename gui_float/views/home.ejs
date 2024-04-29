@@ -6,14 +6,25 @@
     <title>Control Panel</title>
     <link rel="stylesheet" href="/stylesheets/style.css">
 </head>
-<body> 
-    
+<body>
     <div class="container">
         <div class="button-container">
-            <button class="start-button"  ><a href="/start">Start</a></button>
-            <button class="ping-button"  > <a href="/ping">Ping</a></button>
+            <button class="start-button"><a href="/start">Start</a></button>
+            <button class="ping-button"><a href="/ping">Ping</a></button>
             <button class="get-data-button"><a href="/getData">Get Data</a></button>
         </div>
+        <form id="data-form" class="data-container" method="post" action="/sendData">
+            <h2>Enter Values:</h2>
+            <div class="form-group">
+                <label for="value1">Value 1:</label>
+                <input type="text" id="value1" name="key1" required>
+            </div>
+            <div class="form-group">
+                <label for="value2">Value 2:</label>
+                <input type="text" id="value2" name="key2" required>
+            </div>
+            <button type="submit" class="send-data-button">Send Data</button>
+        </form>
         <div class="data-container">
             <h2>Data:</h2>
             <% if (data && data.length > 0) { %>

@@ -1,5 +1,10 @@
 var express = require("express");
-const { getAlldata, start, ping } = require("../controller/index.controller");
+const {
+  getAlldata,
+  start,
+  ping,
+  sendValue,
+} = require("../controller/index.controller");
 var router = express.Router();
 
 /* GET home page. */
@@ -12,5 +17,6 @@ router.get("/", function (req, res, next) {
 router.get("/getData", getAlldata);
 router.get("/start", start);
 router.get("/ping", ping);
+router.post("/sendData", sendValue);
 
 module.exports = router;
