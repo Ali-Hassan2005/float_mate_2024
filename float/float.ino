@@ -184,15 +184,16 @@ void sendData() {
 }
 
 void funUP() {
-   
-     
-    //
+  PushUp();
+  delay(200);
+  Stopp();
 }
 
 
 void fundown() {
-   
-   //
+  PushDown();
+  delay(200);
+  Stopp();
 }
 
 
@@ -288,7 +289,7 @@ void loop() {
  * 
  */
  
-void GoUp(){
+void PushDown(){
   //////////////////// PUSH DOWN ////////////////
 
   digitalWrite(in3,HIGH);
@@ -299,7 +300,7 @@ void GoUp(){
   }  
 }
 
-void GoDown(){
+void PushUp(){
   //////////////////// PULL UP ////////////////
 
   digitalWrite(in3,LOW);
