@@ -45,8 +45,8 @@ WebServer server(80);
  * 
  */
  
-const char* ssid = "Redmi";
-const char* password = "123www123";
+const char* ssid = "Etisalat-Uq5q";
+const char* password = "7k9y5ENP";
 
 // ---------------------------------------------
 
@@ -143,6 +143,14 @@ void heartbeat() {
     serializeJson(msg, jsonString);
     server.send(200, "application/json", jsonString);
 }
+void deleteDate() {
+   doc.clear();
+   StaticJsonDocument<200> msg;
+    msg["msg"] = "Deleted successfully";
+    String jsonString;
+    serializeJson(msg, jsonString);
+    server.send(200, "application/json", jsonString);
+}
 
 void sendData() {
   String requestBody = server.arg("plain");
@@ -173,6 +181,18 @@ void sendData() {
 
   
   server.send(200, "application/json", response);
+}
+
+void funUP() {
+   
+     
+    //
+}
+
+
+void fundown() {
+   
+   //
 }
 
 
@@ -218,6 +238,9 @@ void setup() {
   server.on("/start", HTTP_GET, start);
   server.on("/ping", HTTP_GET, heartbeat);
   server.on("/sendVal", HTTP_POST, sendData);
+  server.on("/deleteDate",HTTP_GET, deleteDate);
+  server.on("/up",HTTP_GET, funUP);
+  server.on("/down",HTTP_GET, fundown );
 
 
   server.begin();
