@@ -8,16 +8,11 @@
 
 
 // ***** CONSTANTS AND VARIABLES FOR MOTORS AND SENSORS ******
-const int freq = 5000;
-const int ledChannel = 0;
-const int resolution = 8;
+const int MovingTime = 15000; // Time in milliseconds for forward direction (15 seconds * 1000 milliseconds/second)
+const int stopTime = 30000;    // Time in milliseconds to stop (1 minute * 1000 milliseconds/minute)
 
-const int MAX_DUTY_CYCLE = (int)(pow(2, resolution) - 1);
-int dutyCycle = 100;
-
-#define enB 33
-#define in3 35
-#define in4 32
+#define in3 32
+#define in4 33
 
 // ** ADRESSES **
 uRTCLib rtc(0x68);
@@ -110,13 +105,20 @@ void start() {
   // We should get a certain Depth on sensor while motor is CW and add on it 20Kpa (2 meters) then we reverse the motor direction to CW
    
   try {
-    for(int counter = 0; counter <= 5; counter++) {
-      GoUp();
-      generateJSON(doc);
-      delay(500);
-    }
+    // Move forward for 15 seconds
+  PushUp();
+  Serial.println("Time to Push Up");
+  delay(MovingTime);
 
-    Stopp();
+  // Stop the motor for 30 seconds
+  Stopp();
+  Serial.println("Time to Stop Pushing");
+  delay(stopTime);
+
+  // Move backward for 15 seconds
+  PushDown();
+  Serial.println("Time to Push Down");
+  delay(MovingTime);
     
     StaticJsonDocument<200> msg;
     msg["msg"] = "The mission completed successfully";
