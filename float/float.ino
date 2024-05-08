@@ -8,8 +8,8 @@
 
 
 // ***** CONSTANTS AND VARIABLES FOR MOTORS AND SENSORS ******
-const int MovingTime = 15000; // Time in milliseconds for forward direction (15 seconds * 1000 milliseconds/second)
-const int stopTime = 30000;    // Time in milliseconds to stop (1 minute * 1000 milliseconds/minute)
+int MovingTime = 25000; // Time in milliseconds for forward direction (15 seconds * 1000 milliseconds/second)
+int stopTime = 15000;    // Time in milliseconds to stop (1 minute * 1000 milliseconds/minute)
 
 #define in3 32
 #define in4 33
@@ -172,6 +172,8 @@ void sendData() {
   // First key is PressureZero, second key is DepthZero 
   PressureZero = jsonBuffer["key1"];
   DepthZero = jsonBuffer["key2"];
+  MovingTime = jsonBuffer["key3"];
+  
   
   StaticJsonDocument<200> responseJson;
   responseJson["msg"] = "success";
@@ -185,15 +187,25 @@ void sendData() {
 
 void funUP() {
   PushUp();
-  delay(200);
+  delay(1000);
   Stopp();
+   StaticJsonDocument<200> msg;
+    msg["msg"] = "up successfully";
+    String jsonString;
+    serializeJson(msg, jsonString);
+    server.send(200, "application/json", jsonString);
 }
 
 
 void fundown() {
   PushDown();
-  delay(200);
+  delay(1000);
   Stopp();
+   StaticJsonDocument<200> msg;
+    msg["msg"] = "down successfully";
+    String jsonString;
+    serializeJson(msg, jsonString);
+    server.send(200, "application/json", jsonString);
 }
 
 
@@ -289,42 +301,24 @@ void loop() {
  * 
  */
  
-void PushDown(){
-  //////////////////// PUSH DOWN ////////////////
-
+void PushUp(){
   digitalWrite(in3,HIGH);
-  digitalWrite(in4,LOW);
-  for(int dutyCycle = 0; dutyCycle <= MAX_DUTY_CYCLE; dutyCycle += 2){   
-    ledcWrite(ledChannel, dutyCycle);
-    delay(2);
-  }  
+  digitalWrite(in4,LOW);  
 }
 
-void PushUp(){
-  //////////////////// PULL UP ////////////////
-
+void PushDown(){
   digitalWrite(in3,LOW);
-  digitalWrite(in4,HIGH);
-  for(int dutyCycle = 0; dutyCycle <= MAX_DUTY_CYCLE; dutyCycle += 2){   
-    ledcWrite(ledChannel, dutyCycle);
-    delay(2);
-  }  
+  digitalWrite(in4,HIGH);  
 }
 
 void Stopp(){
   digitalWrite(in3,LOW);
-  digitalWrite(in4,LOW); 
-  ledcWrite(ledChannel, 0); 
+  digitalWrite(in4,LOW);  
 }
 
 void SetupMotor(){
-  pinMode(enB, OUTPUT);
   pinMode(in3, OUTPUT);
   pinMode(in4, OUTPUT);
-  
-  ledcSetup(ledChannel, freq, resolution);
-  // attach the channel to the GPIO to be controlled
-  ledcAttachPin(enB, ledChannel);
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -482,11 +476,11 @@ String MeasureTime(){
 void SetupRTC(){
   rtc.set_rtc_address(0x68);
 
-	// set RTC Model
-	rtc.set_model(URTCLIB_MODEL_DS1307);
+  // set RTC Model
+  rtc.set_model(URTCLIB_MODEL_DS1307);
 
-	// refresh data from RTC HW in RTC class object so flags like rtc.lostPower(), rtc.getEOSCFlag(), etc, can get populated
-	rtc.refresh();
+  // refresh data from RTC HW in RTC class object so flags like rtc.lostPower(), rtc.getEOSCFlag(), etc, can get populated
+  rtc.refresh();
 
   #ifdef ARDUINO_ARCH_ESP8266
     URTCLIB_WIRE.begin(0, 2); // D3 and D4 on ESP8266
@@ -495,28 +489,28 @@ void SetupRTC(){
   #endif
 
   if (rtc.enableBattery()) {
-		Serial.println("Battery activated correctly.");
-	} else {
-		Serial.println("ERROR activating battery.");
-	}
+    Serial.println("Battery activated correctly.");
+  } else {
+    Serial.println("ERROR activating battery.");
+  }
 
-	// Check whether OSC is set to use VBAT or not
-	if (rtc.getEOSCFlag())
-		Serial.println(F("Oscillator will not use VBAT when VCC cuts off. Time will not increment without VCC!"));
-	else
-		Serial.println(F("Oscillator will use VBAT when VCC cuts off."));
+  // Check whether OSC is set to use VBAT or not
+  if (rtc.getEOSCFlag())
+    Serial.println(F("Oscillator will not use VBAT when VCC cuts off. Time will not increment without VCC!"));
+  else
+    Serial.println(F("Oscillator will use VBAT when VCC cuts off."));
 
-	Serial.print("Lost power status: ");
-	if (rtc.lostPower()) {
-		Serial.print("POWER FAILED. Clearing flag...");
-		rtc.lostPowerClear();
-		Serial.println(" done.");
-	} else {
-		Serial.println("POWER OK");
-	}
+  Serial.print("Lost power status: ");
+  if (rtc.lostPower()) {
+    Serial.print("POWER FAILED. Clearing flag...");
+    rtc.lostPowerClear();
+    Serial.println(" done.");
+  } else {
+    Serial.println("POWER OK");
+  }
 
   //  LEAVE THIS UNCOMMENTD IF YOU WANT TO SET TIME
-    rtc.set(0, 52, 7, 0, 13, 4, 24);
+  //  rtc.set(0, 52, 7, 0, 13, 4, 24);
   //  RTCLib::set(byte second, byte minute, byte hour, byte dayOfWeek, byte dayOfMonth, byte month, byte year)
 }
 
