@@ -1,0 +1,3 @@
+Going Down : 18s
+Stopped :36s
+Going Up :01.02

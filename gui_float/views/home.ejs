@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control Panel</title>
-    <link rel="stylesheet" href="/stylesheets/style.css">
+    <link rel="stylesheet" href="stylesheets/style.css">
+    <script src="dist/chart.umd.js"></script>
 </head>
 <body>
     <div class="container">
@@ -12,16 +13,23 @@
             <button class="start-button"><a href="/start">Start</a></button>
             <button class="ping-button"><a href="/ping">Ping</a></button>
             <button class="get-data-button"><a href="/getData">Get Data</a></button>
+            <button class="get-data-button"><a href="/up">up</a></button>
+            <button class="get-data-button"><a href="/down">down</a></button>
+            <button style="background-color: #f71f22;" class="get-data-button"><a href="/deleteData">Delete Data</a></button>
         </div>
         <form id="data-form" class="data-container" method="post" action="/sendData">
             <h2>Enter Values:</h2>
             <div class="form-group">
-                <label for="value1">Value 1:</label>
-                <input type="text" id="value1" name="key1" required>
+                <label for="value1">PressureZero:</label>
+                <input type="text" id="value1" name="key1"  >
             </div>
             <div class="form-group">
-                <label for="value2">Value 2:</label>
-                <input type="text" id="value2" name="key2" required>
+                <label for="value2">DepthZero:</label>
+                <input type="text" id="value2" name="key2"  >
+            </div>
+            <div class="form-group">
+                <label for="value2">Time:</label>
+                <input type="text" id="value3" name="key3"  >
             </div>
             <button type="submit" class="send-data-button">Send Data</button>
         </form>
@@ -53,11 +61,69 @@
             <% } %>
             <h2>Messages:</h2>
             <% if (message) { %>
-                <p><%= message %></p>
+                <p style="width: 233px"><%= message %></p>
             <% } else { %>
                 <p>No message available</p>
             <% } %>
         </div>
+        <canvas id="myChart"></canvas>
+        <script>
+            var timeData = [];
+            var depthData = [];
+            <% if(data) { %>
+                <% data.forEach(function(item) { %>
+                    timeData.push('<%= item.time %>');  
+                    depthData.push(<%= item.depth.value %>);  
+                <% }); %>
+            <% } %>
+
+            var ctx = document.getElementById('myChart').getContext('2d');
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: timeData,
+                    datasets: [{
+                        label: 'Depth',
+                        data: depthData,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            },
+                            ticks: {
+                                color: 'white'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Depth'
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                color: 'white'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                color: 'white'
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
     </div>
 </body>
 </html>

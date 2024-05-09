@@ -4,6 +4,9 @@ const {
   start,
   ping,
   sendValue,
+  deleteData,
+  UP,
+  DOWN,
 } = require("../controller/index.controller");
 var router = express.Router();
 
@@ -17,6 +20,9 @@ router.get("/", function (req, res, next) {
 router.get("/getData", getAlldata);
 router.get("/start", start);
 router.get("/ping", ping);
+router.get("/deleteData", deleteData);
 router.post("/sendData", sendValue);
+router.get("/up", UP);
+router.get("/down", DOWN);
 
 module.exports = router;
