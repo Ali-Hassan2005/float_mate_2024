@@ -170,9 +170,8 @@ After installation, the components can be executed individually or as part of an
 ```plaintext
 float_mate_2024/
 ├── NANO_CLOCK/         # High-precision clock module (C++)
-├── float/              # Core application logic and floating-point operations (C++)
+├── float/              # Core application Arduino client code for sensor reading, motor control, and WiFi communication
 ├── gui_float/          # Front-end interface (JavaScript, EJS, CSS)
-├── Arduino_Client/     # Arduino client code for sensor reading, motor control, and WiFi communication
 ├── .gitignore          # Git configuration file to ignore specified files/folders
 └── README.md           # Project documentation
 ```
