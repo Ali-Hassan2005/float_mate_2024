@@ -3,7 +3,7 @@
 Atlas is a multi-module application for float missions that combines robust backend processing with a responsive graphical user interface and an embedded client. The project is divided into three primary components:
 
 - **NANO_CLOCK:** Provides high-precision timekeeping functionality.
-- **float:** Contains the core application logic and algorithms implemented in C++. An embedded client (running on Arduino hardware) that handles sensor data, motor control, and communication via WiFi.
+- **float:** Contains the core application logic and algorithms implemented in C++. An embedded client (running on ESP32 hardware) that handles sensor data, motor control, and communication via WiFi.
 - **gui_float:** Implements the front-end interface using JavaScript, EJS, and CSS for a seamless user experience.
 
 ## Table of Contents
